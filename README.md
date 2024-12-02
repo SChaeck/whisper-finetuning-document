@@ -1,86 +1,60 @@
 # Whisper Document
 
-# 1. 사전 지식
+## 1. 사전 지식
 
-### **1.1. Whisper**
-
+### 1.1. Whisper
 - OpenAI 개발
 - ASR 모델 → STT, 언어 감지, 번역 등의 작업 가능
 - Transformer (Encoder-Decoder) 아키텍처 기반으로 설계됨.
-    
-    ![image.png](Whisper%20Document%201501115c8eb880fdb0fbebd0220f7258/image.png)
-    
 - 다양한 언어와 방언 지원 + 배경 소음이 복잡한 환경에서도 상대적으로 정확한 결과 제공
 - 사이즈별로 오픈소스 공개
-    
-    
-    | 모델 | 파라미터 | URL |
-    | --- | --- | --- |
-    | whisper-large-v3 | 1.54B | [https://huggingface.co/openai/whisper-large-v3](https://huggingface.co/openai/whisper-large-v3) |
-    | whisper-large-v3-turbo | 809M | [https://huggingface.co/openai/whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) |
-    | whisper-medium | 754M | [https://huggingface.co/openai/whisper-medium](https://huggingface.co/openai/whisper-medium) |
-    | whisper-small | 242M | [https://huggingface.co/openai/whisper-small](https://huggingface.co/openai/whisper-small) |
-    | whisper-base | 72.6M | [https://huggingface.co/openai/whisper-base](https://huggingface.co/openai/whisper-base) |
-    | whisper-tiny | 37.8M | [https://huggingface.co/openai/whisper-tiny](https://huggingface.co/openai/whisper-tiny) |
+
+| 모델                | 파라미터 | URL |
+|---------------------|----------|-----|
+| whisper-large-v3    | 1.54B    | [링크](https://huggingface.co/openai/whisper-large-v3) |
+| whisper-large-v3-turbo | 809M  | [링크](https://huggingface.co/openai/whisper-large-v3-turbo) |
+| whisper-medium      | 754M     | [링크](https://huggingface.co/openai/whisper-medium) |
+| whisper-small       | 242M     | [링크](https://huggingface.co/openai/whisper-small) |
+| whisper-base        | 72.6M    | [링크](https://huggingface.co/openai/whisper-base) |
+| whisper-tiny        | 37.8M    | [링크](https://huggingface.co/openai/whisper-tiny) |
 
 ### 1.2. Mel frequency
+- 인간의 청각 특성을 반영하여 음성을 분석할 때 사용되는 주파수 척도.
+- 음성 신호 처리에서 사람의 청각과 더 유사한 분석을 수행.
 
-- 인간의 청각 특성을 반영하여 음성을 분석할 때 사용되는 주파수 척도
-- 음성 신호 처리에서 사람의 청각과 더 유사한 분석을 수행
+### 1.3. Mel frequency bins
+- Mel scale로 변환된 주파수 대역을 나눈 구간.
+- Mel frequency bins의 수가 많아질수록 더 세밀한 주파수 정보가 포함되지만, 연산 비용이 증가함.
+- Whisper 모델이 사용하는 bins:
+  - **128 Mel bins**: large-v3, large-v3-turbo
+  - **80 Mel bins**: large-v2, large-v1, medium, small, base, tiny
 
-### **1.3. Mel frequency bins**
-
-- Mel scale로 변환된 주파수 대역을 나눈 구간
-- Mel frequency bins의 수가 많아질수록 더 세밀한 주파수 정보가 포함되지만, 연산 비용이 증가함
-- Whisper 모델이 사용하는 bins
-    - *128 Mel bins*: large-v3, large-v3-turbo
-    - *80 Mel bins*: large-v2, large-v1, medium, small, base, tiny
-
-<aside>
-⚠️
-
-**사용하는 모델의 Mel bins을 기준으로 데이터 전처리를 다르게 해야한다.**
-
-e.g. large-v3의 FeatureExtractor로 전처리한 데이터(128 Mel bins)
-
-      → large-v3-turbo에서 사용 가능 
-
-      → large-v2에서 사용 불가능(채널 에러 발생)
-
-      → medium에서 사용 불가능(채널 에러 발생)
-
-</aside>
+**⚠️ Note:**
+사용하는 모델의 Mel bins을 기준으로 데이터 전처리를 다르게 해야 함.
+- large-v3의 FeatureExtractor로 전처리한 데이터(128 Mel bins):
+  - large-v3-turbo에서 사용 가능.
+  - large-v2 또는 medium에서 사용 불가능(채널 에러 발생).
 
 ### 1.4. Character Error Rate (CER)
+- 두 문장을 철자 기준으로 비교한 에러율 (주로 모델의 평가 지표로 사용됨).
+- Word Error Rate (WER)과 비교:
+  - **한국어의 특징**:
+    - 형태소 기반의 교착어 → 조사와 접사가 존재.
+    - 띄어쓰기 규칙이 비교적 유연.
+  - WER은 단어 단위로 비교하기 때문에 작은 철자나 조사, 띄어쓰기에 민감하여 과도하게 오류율이 높게 나오는 경향이 있음.
+  - CER은 철자 단위로 비교하기 때문에 이러한 변화에 덜 민감하며, 오류를 적절하게 측정 가능.
 
-- 두 문장을 철자 기준으로 비교한 에러율 (주로 모델의 평가 지표로 사용됨)
-- Word Error Rate (WER)과 비교
-    
-    <aside>
-    💡
-    
-    **한국어의 특징**
-    
-    - 형태소 기반의 교착어 → 조사와 접사가 존재함
-    - 띄어쓰기 규칙이 비교적 유연
-    </aside>
-    
-    - WER은 단어 단위로 비교하기 때문에 작은 철자나 조사, 띄어쓰기에 민감함. 한국어에 대해 과도하게 오류율이 높게 나오는 경향이 있음
-    - CER은 철자 단위로 비교하기 때문에 이러한 변화에 덜 민감함. 따라서 오류를 적절하게 측정할 수 있음
-
-# 2. 데이터 준비
+## 2. 데이터 준비
 
 ### 2.1. AIHub
-
 1. [중·노년층 한국어 방언 데이터 (충청도, 전라도, 제주도)](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71558)
-2. [중·노년층 한국어 방언 데이터(강원도, 경상도)](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71517)
-- 총 데이터 수: 700k
+2. [중·노년층 한국어 방언 데이터 (강원도, 경상도)](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71517)
+- **총 데이터 수**: 700k
 
-### 2.2 VOTE400
-
+### 2.2. VOTE400
 - [설명 및 다운로드](https://ai4robot.github.io/mindslab-etri-vote400/#)
 - 용량: 30GB
-- 대구(DG), 경남(GN), 강원(GW), 전남(JN), 서울(SE)
+- 방언: 대구(DG), 경남(GN), 강원(GW), 전남(JN), 서울(SE)
 
 # 3. 데이터 전처리
 
@@ -486,30 +460,16 @@ trainer.train()
           -H "Content-Type: multipart/form-data" \
           -F "audio=@audio_test.mp3"
         ```
-        
 
 ---
 
-<aside>
-🔖
-
-**Reference**
-
-@misc{radford2022whisper,
-doi = {10.48550/ARXIV.2212.04356},
-url = {[https://arxiv.org/abs/2212.04356](https://arxiv.org/abs/2212.04356)},
-author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
-title = {Robust Speech Recognition via Large-Scale Weak Supervision},
-publisher = {arXiv},
-year = {2022},
-copyright = {[arXiv.org](http://arxiv.org/) perpetual, non-exclusive license}
-}
-
-</aside>
+## Reference
+- Radford, Alec et al. _Robust Speech Recognition via Large-Scale Weak Supervision._ [arXiv](https://arxiv.org/abs/2212.04356), 2022.
 
 ### 작성자
 
-동국대학교
-컴퓨터공학전공
-이름: 정수채
+동국대학교 컴퓨터공학전공
+
+정수채
+
 email: jeongsuchae9211@gmail.com
